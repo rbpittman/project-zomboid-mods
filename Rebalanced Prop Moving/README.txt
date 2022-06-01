@@ -1,0 +1,1 @@
+The diff of the ISMoveableSpriteProps.lua file is summarized here in the file ISMoveableSpriteProps.lua.diff, using the "diff -u original.lua new.lua" command.

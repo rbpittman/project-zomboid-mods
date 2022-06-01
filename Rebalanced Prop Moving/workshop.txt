@@ -1,0 +1,23 @@
+version=1
+id=2699828474
+title=Rebalanced Prop Moving
+description=Do I really need a hammer to move a couch?
+description=I wish I could move this desk, but I haven't taken any carpentry classes!
+description=
+description=This mod removes the nails holding your furniture and appliances to the floor!
+description=
+description=Details:
+description=- Furniture and appliances require no skill/tool to move.
+description=- Fixtures like cabinets and shelves still require skills/tools.
+description=- Break chance for props requiring skills/tools has been reduced to 30% at skill level 0, 20% at 1, 10% at 2, and 0% for >=3.
+description=- Break chance for props not requiring skills/tools is now 0%.
+description=- Sinks in vanilla have no associated skill and receive a 25% break chance default. Changed to 0% since apparently no skill is required!
+description=- All the above only applies to "pickup" and "place" actions. Disassembly should not be affected by this mod.
+description=
+description=The mod works by "whitelisting" props if their name matches certain patterns. This implies that the patterns may catch too much or too little, so feel free to provide feedback if you think some props should or should not require a skill/tool.
+description=
+description=Note: Not compatible with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2685057281]Safer Prop Moving[/url]
+description=
+description=Disclaimer: There could be big bugs in this mod! The vanilla lua code has numerous edge cases, please comment if you discover issues.
+tags=Balance
+visibility=public
