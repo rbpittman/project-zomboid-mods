@@ -31,6 +31,7 @@ function ISMoveableSpriteProps:isWhitelisted( _mode )
 	  (self.name == "Crate"));
 end
 
+
 function ISMoveableSpriteProps.fromObject( _object )
     local s = ISMoveableSpriteProps.new( _object and _object:getSprite() or nil );
 
@@ -286,9 +287,10 @@ function ISMoveableSpriteProps:getBreakChance( _player )
 	-- Don't have access to _mode here (not a parameter), but should
         -- only be called in pickup mode from what I can tell
         if self:isWhitelisted("pickup") then return 0; end
+
 	if _player and self.isMoveable and self.canBreak and self.pickUpTool then
         local toolDef = ISMoveableDefinitions:getInstance().getToolDefinition( self.pickUpTool ); --ISMoveableSpriteProps.toolDefinitions[self.pickUpTool];
-        if toolDef then
+        if toolDef then 
 	   if not toolDef.perk then
 	    return 0;
            end
@@ -297,7 +299,7 @@ function ISMoveableSpriteProps:getBreakChance( _player )
 	     return 0;
 	   end
            return (3-perkLevel)*10;
-        else
+       else
             print("Missing tool definition for: "..tostring(self.pickUpTool));
         end
 	end
@@ -407,7 +409,7 @@ end
 
 function ISMoveableSpriteProps:hasTool( _player, _mode )
 	if ISMoveableDefinitions.cheat then return true; end
-	if self:isWhitelisted(_mode) then return true; end
+        if self:isWhitelisted(_mode) then return true; end
     local tool = (_mode == "pickup" and self.pickUpTool) or (_mode == "place" and self.placeTool);
     if tool and _player then
         local inventory = _player:getInventory();
@@ -506,7 +508,7 @@ function ISMoveableSpriteProps:getInfoPanelDescription( _square, _object, _playe
         end
 
         --##########################################
-	local whitelist = self:isWhitelisted(_mode);
+        local whitelist = self:isWhitelisted(_mode);
         if InfoPanelFlags.name then infoTable = ISMoveableSpriteProps.addLineToInfoTable( infoTable, getText("IGUI_Name")..":", 255, 255, 255, Translator.getMoveableDisplayName(InfoPanelFlags.name), 0, 255, 0 ); end
         if InfoPanelFlags.weight then infoTable = ISMoveableSpriteProps.addLineToInfoTable( infoTable, getText("Tooltip_item_Weight")..":", 255, 255, 255, tostring(InfoPanelFlags.weight), 0, 255, 0 ); end
         if InfoPanelFlags.nameSkill and not whitelist then
@@ -666,6 +668,7 @@ function ISMoveableSpriteProps:getInfoPanelFlagsPerTile( _square, _object, _play
     end
 
     if _mode and _mode =="pickup" then
+        print("pickup test", self:getTopTable(_square), _object)
         InfoPanelFlags.tooHeavy = InfoPanelFlags.tooHeavy or (not _player:getInventory():hasRoomFor(_player, self.weight));
         InfoPanelFlags.itemsOnSurface = InfoPanelFlags.itemsOnSurface or ((self.isTable and _square:Is("IsTableTop")) or (self.isTable and _object and _object ~= self:getTopTable(_square)));
         InfoPanelFlags.hasWater = InfoPanelFlags.hasWater or (self.isWaterCollector and _object and _object:hasWater());
@@ -1011,6 +1014,7 @@ function ISMoveableSpriteProps:pickUpMoveableInternal( _character, _square, _obj
                     item:getModData().health = _object:getHealth()
                     item:getModData().maxHealth = _object:getMaxHealth()
                     item:getModData().thumpSound = _object:getThumpSound()
+                    item:getModData().color = _object:getCustomColor()
                     if _object:hasModData() then
                         item:getModData().modData = copyTable(_object:getModData())
                     end
@@ -1133,7 +1137,9 @@ function ISMoveableSpriteProps:getTopTable( _square )
         local sprite = obj:getSprite()
         if sprite and sprite:getProperties() then
             local props = sprite:getProperties()
+            print("check item ", obj:getSprite():getName(), props:Is("IsTable"), props:Is("Surface"), tonumber(props:Val("Surface")))
             if props:Is("IsTable") and props:Is("Surface") and tonumber(props:Val("Surface")) then
+                print("return ", obj)
                 return obj
             end
         end
@@ -1620,6 +1626,17 @@ function ISMoveableSpriteProps:placeMoveableInternal( _square, _item, _spriteNam
     local insertIndex   = _square:getObjects() and _square:getObjects():size();
     local removeList    = {}; -- table used to remove objects after place (due to insertIndex)
 
+    -- Place under IsoWorldInventoryObjects
+    if insertIndex and insertIndex > 0 then
+        local objects = _square:getObjects()
+        for i=objects:size(),1,-1 do
+            if not instanceof(objects:get(i-1), "IsoWorldInventoryObject") then
+                insertIndex = i
+                break
+            end
+        end
+    end
+
     if self.type=="WallOverlay" then
         local wall = self:getWallForFacing( _square, self.facing );
         if wall then
@@ -1822,6 +1839,9 @@ function ISMoveableSpriteProps:placeMoveableInternal( _square, _item, _spriteNam
                         for key,value in pairs(modData.modData) do
                             obj:getModData()[key] = value
                         end
+                    end
+                    if type(modData.color) == "userdata" then
+                        obj:setCustomColor(modData.color);
                     end
                 end
             end
@@ -2656,10 +2676,10 @@ function ISMoveableSpriteProps:scrapObjectInternal( _character, _scrapDef, _squa
 
         local deviceData = object.getDeviceData and object:getDeviceData();
 
-        if object:isFloor() then
+        if object:isFloor() and (_square:getZ() == 0) then
             local floor = _square:getFloor();
             if floor then
-                floor:setSprite("floors_exterior_natural_01_18");
+                floor:setSpriteFromName("blends_natural_01_64");
                 if isClient() then floor:transmitUpdatedSpriteToServer(); end
             end
         else
