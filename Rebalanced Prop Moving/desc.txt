@@ -16,3 +16,7 @@ The mod works by "whitelisting" props if their name matches certain patterns. Th
 Note: Not compatible with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2685057281]Safer Prop Moving[/url]
 
 Disclaimer: There could be big bugs in this mod! The vanilla lua code has numerous edge cases, please comment if you discover issues.
+
+Game Version: 
+This mod is designed for the latest non-beta version of the game; that is, "None" should be selected under the game's "betas" properties. I update it every now and then when bugs appear with later game versions.
+There's a special mod for [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2776348490]version 41.65[/url], made upon request.
