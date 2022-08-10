@@ -445,6 +445,7 @@ local function resetInfoPanelFlags()
     InfoPanelFlags.tool2String = {};
     InfoPanelFlags.scrapChance = nil;
     InfoPanelFlags.breakChance = nil;
+    InfoPanelFlags.hasCompost = nil;
     InfoPanelFlags.tooHeavy = nil;
     InfoPanelFlags.tooHot = nil;
     InfoPanelFlags.itemsOnSurface = nil;
@@ -452,6 +453,7 @@ local function resetInfoPanelFlags()
     InfoPanelFlags.notEmpty = nil;
     InfoPanelFlags.doorBarricaded = nil;
     InfoPanelFlags.doorInFrame = nil;
+    InfoPanelFlags.floorAtTopOfStairs = nil;
     InfoPanelFlags.windowOpen = nil;
     InfoPanelFlags.windowBarricaded = nil;
     InfoPanelFlags.windowInFrame = nil;
@@ -550,6 +552,7 @@ function ISMoveableSpriteProps:getInfoPanelDescription( _square, _object, _playe
             if InfoPanelFlags.canRotate then infoTable = ISMoveableSpriteProps.addLineToInfoTable( infoTable, getText("IGUI_CanRotate"), 0, 255, 0 );
             else infoTable = ISMoveableSpriteProps.addLineToInfoTable( infoTable, getText("IGUI_CanNotRotate"), 255, 0, 0 ); end
         end
+        if InfoPanelFlags.hasCompost then infoTable = ISMoveableSpriteProps.addLineToInfoTable( infoTable, "- "..getText("IGUI_ComposterHasCompost"), 255, 0, 0 ); end
         if InfoPanelFlags.tooHeavy then infoTable = ISMoveableSpriteProps.addLineToInfoTable( infoTable, "- "..getText("IGUI_ToHeavy"), 255, 0, 0 ); end
         if InfoPanelFlags.tooHot then infoTable = ISMoveableSpriteProps.addLineToInfoTable( infoTable, "- "..getText("IGUI_TooHot"), 255, 0, 0 ); end
         if InfoPanelFlags.itemsOnSurface then infoTable = ISMoveableSpriteProps.addLineToInfoTable( infoTable, "- "..getText("IGUI_ItemsSurface"), 255, 0, 0 ); end
@@ -557,6 +560,7 @@ function ISMoveableSpriteProps:getInfoPanelDescription( _square, _object, _playe
         if InfoPanelFlags.notEmpty then infoTable = ISMoveableSpriteProps.addLineToInfoTable( infoTable, "- "..getText("IGUI_MovableHasMaterial"), 255, 0, 0 ); end
         if InfoPanelFlags.doorBarricaded then infoTable = ISMoveableSpriteProps.addLineToInfoTable( infoTable, "- "..getText("IGUI_Moveables_DoorBarricaded"), 255, 0, 0 ); end
         if InfoPanelFlags.doorInFrame then infoTable = ISMoveableSpriteProps.addLineToInfoTable( infoTable, "- "..getText("IGUI_Moveables_DoorInFrame"), 255, 0, 0 ); end
+        if InfoPanelFlags.floorAtTopOfStairs then infoTable = ISMoveableSpriteProps.addLineToInfoTable( infoTable, "- "..getText("IGUI_Moveables_FloorAtTopOfStairs"), 255, 0, 0 ); end
         if InfoPanelFlags.windowOpen then infoTable = ISMoveableSpriteProps.addLineToInfoTable( infoTable, "- "..getText("IGUI_WindowOpen"), 255, 0, 0 ); end
         if InfoPanelFlags.windowBarricaded then infoTable = ISMoveableSpriteProps.addLineToInfoTable( infoTable, "- "..getText("IGUI_WindowBarricaded"), 255, 0, 0 ); end
         if InfoPanelFlags.windowInFrame then infoTable = ISMoveableSpriteProps.addLineToInfoTable( infoTable, "- "..getText("IGUI_Moveables_WindowInFrame"), 255, 0, 0 ); end
@@ -670,6 +674,10 @@ function ISMoveableSpriteProps:getInfoPanelFlagsPerTile( _square, _object, _play
             InfoPanelFlags.removePropane = InfoPanelFlags.removePropane or _object:hasPropaneTank();
         end
 
+        if instanceof(_object, "IsoCompost") then
+            InfoPanelFlags.hasCompost = InfoPanelFlags.hasCompost or (_object and _object:getCompost() > 0);
+        end
+
         if instanceof(_object, "IsoFireplace") then
             InfoPanelFlags.tooHot = InfoPanelFlags.tooHot or (_object and (_object:isLit() or _object:isSmouldering()));
         end
@@ -686,6 +694,7 @@ function ISMoveableSpriteProps:getInfoPanelFlagsPerTile( _square, _object, _play
         InfoPanelFlags.doorBarricaded = InfoPanelFlags.doorBarricaded or (_object and instanceof(_object,"IsoDoor") and _object:isBarricaded());
         InfoPanelFlags.doorBarricaded = InfoPanelFlags.doorBarricaded or (_object and instanceof(_object,"IsoThumpable") and _object:isDoor() and _object:isBarricaded());
         InfoPanelFlags.doorInFrame = InfoPanelFlags.doorInFrame or (_object and instanceof(_object,"IsoThumpable") and _object:isDoorFrame() and _square:getDoor(_object:getNorth()));
+        InfoPanelFlags.floorAtTopOfStairs = InfoPanelFlags.floorAtTopOfStairs or self:isFloorAtTopOfStairs(_object);
         InfoPanelFlags.windowInFrame = InfoPanelFlags.windowInFrame or (instanceof(_object,"IsoThumpable") and _object:isWindow() and _square:getWindow(_object:getNorth()))
 	end
 	
@@ -1033,10 +1042,15 @@ function ISMoveableSpriteProps:pickUpMoveableInternal( _character, _square, _obj
 
         -- Remove stuff from the world
         if self.type == "WallOverlay" then
-            if _sprInstance then
+            -- A Mirror on the east or south edge of a square.
+            if _object:getSprite() and _spriteName and (_object:getSprite():getName() == _spriteName) then
+                triggerEvent("OnObjectAboutToBeRemoved", _object) -- Hack for RainCollectorBarrel, Trap, etc
+                _square:transmitRemoveItemFromSquare(_object)
+            elseif _sprInstance then
                 local sprList = _object:getChildSprites();
                 local sprIndex = sprList and sprList:indexOf(_sprInstance) or -1
-                if sprIndex ~= -1 then
+                if sprIndex == -1 then
+                else
                     _object:RemoveAttachedAnim(sprIndex)
                     if isClient() then _object:transmitUpdatedSpriteToServer() end
                 end
@@ -1108,6 +1122,8 @@ function ISMoveableSpriteProps:pickUpMoveableInternal( _character, _square, _obj
         --ISMoveableCursor.clearCacheForAllPlayers();
 
         triggerEvent("OnContainerUpdate")
+
+        IsoGenerator.updateGenerator(_square)
         return item;
     end
     --end
@@ -1120,9 +1136,9 @@ function ISMoveableSpriteProps:getTopTable( _square )
         local sprite = obj:getSprite()
         if sprite and sprite:getProperties() then
             local props = sprite:getProperties()
-            print("check item ", obj:getSprite():getName(), props:Is("IsTable"), props:Is("Surface"), tonumber(props:Val("Surface")))
+--            print("check item ", obj:getSprite():getName(), props:Is("IsTable"), props:Is("Surface"), tonumber(props:Val("Surface")))
             if props:Is("IsTable") and props:Is("Surface") and tonumber(props:Val("Surface")) then
-                print("return ", obj)
+--                print("return ", obj)
                 return obj
             end
         end
@@ -1602,6 +1618,21 @@ function ISMoveableSpriteProps:placeMoveable( _character, _square, _origSpriteNa
     end
 end
 
+local function getNameAndNumFromSpriteName(name)
+    local len = string.len(name)
+    local num = nil
+    local strName = nil
+    for i = len, 1, -1 do
+        local sub = string.sub(name, i, i)
+        if sub == "_" then
+            strName = string.sub(name, 1, i-1)
+            num = tonumber(string.sub(name, i+1, len))
+            break
+        end
+    end
+    return strName, num
+end
+
 function ISMoveableSpriteProps:placeMoveableInternal( _square, _item, _spriteName )
     local obj;
     local north         = self.facing and (self.facing=="N" or self.facing=="S");
@@ -1622,7 +1653,10 @@ function ISMoveableSpriteProps:placeMoveableInternal( _square, _item, _spriteNam
 
     if self.type=="WallOverlay" then
         local wall = self:getWallForFacing( _square, self.facing );
-        if wall then
+        if wall and (self.facing == "W" or self.facing == "N") then
+            -- The actual wall is on the adjacent square to the east or south.
+            obj = IsoObject.new( getCell(), _square, getSprite(_spriteName) );
+        elseif wall then
             wall:AttachExistingAnim(getSprite(_spriteName), 0, 0, false, 0, false, 0)
             --[[
             local overlay = getSprite(self.spriteName):newInstance();
@@ -1681,7 +1715,6 @@ function ISMoveableSpriteProps:placeMoveableInternal( _square, _item, _spriteNam
             end
         end
     else
-        --local isGenericThump = false;
         local itemSprite = _spriteName;
         local sprite = getSprite( itemSprite );
         local props = sprite and sprite:getProperties();
@@ -1723,6 +1756,9 @@ function ISMoveableSpriteProps:placeMoveableInternal( _square, _item, _spriteNam
             obj:setMovedThumpable(true);
         elseif self.isoType == "IsoClothingWasher" then
             obj = IsoClothingWasher.new(getCell(), _square, getSprite(itemSprite))
+            obj:setMovedThumpable(true);
+        elseif self.isoType == "IsoCompost" then
+            obj = IsoCompost.new(getCell(), _square, getSprite(itemSprite))
             obj:setMovedThumpable(true);
         elseif self.isoType == "IsoMannequin" then
             obj = IsoMannequin.new(getCell(), _square, getSprite(itemSprite))
@@ -1787,48 +1823,79 @@ function ISMoveableSpriteProps:placeMoveableInternal( _square, _item, _spriteNam
                 obj:addLightSourceFromSprite();
                 obj:getCustomSettingsFromItem(_item);
             elseif not blockStyleSolid or self.type == "FloorRug" or self.type == "WallObject" or self.isTableTop then
-                obj = IsoObject.new( getCell(), _square, itemSprite );
-                -- FIXME: This was used for the POLICE station sign.  But it interfers with 3D-item placement on shelves.
-                --[[
-                if obj and self.type == "WallObject" and self.surface and self.surface > 0 then
-                    obj:setRenderYOffset(self.surface);
+                if props then
+                    if props:Is(IsoFlagType.WallN) or props:Is(IsoFlagType.WallW) then
+                        obj = IsoThumpable.new(getCell(), _square, itemSprite, props:Is(IsoFlagType.WallN), {})
+                    elseif props:Is(IsoFlagType.doorN) or props:Is(IsoFlagType.doorW) then
+                        local tname, tnum = getNameAndNumFromSpriteName(itemSprite)
+                        obj = IsoThumpable.new(getCell(), _square, itemSprite, tname .. "_" .. tostring(tnum+2), props:Is(IsoFlagType.doorN), nil);
+                        obj:setIsDoor(true)
+                    elseif props:Is(IsoFlagType.WindowN) or props:Is(IsoFlagType.WindowW) then
+                        obj = IsoWindow.new( getCell(), _square, getSprite( _spriteName ), props:Is(IsoFlagType.WindowN) );
+                        obj:setIsLocked(false)
+                    else
+                        obj = IsoObject.new( getCell(), _square, itemSprite );
+                    end
+                else
+                    obj = IsoObject.new( getCell(), _square, itemSprite );
+                    -- FIXME: This was used for the POLICE station sign.  But it interfers with 3D-item placement on shelves.
                 end
-                --]]
             else
-                obj = IsoThumpable.new(getCell(), _square, itemSprite, false, {}); --IsoObject.new( getCell(), self.square, itemSprite );
-                obj:setMaxHealth(self:getObjectHealth());
-                obj:setHealth(obj:getMaxHealth());
-                obj:setThumpDmg(1); --zeds needed to hurt obj
-                obj:setIsThumpable(true);
-                obj:setBlockAllTheSquare(true);
-                obj:setCanPassThrough(false);
-                obj:setCanPassThrough(false);
-                obj:setHoppable(false);
-                obj:setBreakSound("BreakObject");
-                --isGenericThump = true;
-                if _item:hasModData() then
-                    local modData = _item:getModData()
-                    if type(modData.name) == "string" then
-                        obj:setName(modData.name)
-                    end
-                    if tonumber(modData.health) and tonumber(modData.maxHealth) then
-                        obj:setHealth(tonumber(modData.health))
-                        obj:setMaxHealth(tonumber(modData.maxHealth))
-                    end
-                    if type(modData.thumpSound) == "string" then
-                        obj:setThumpSound(modData.thumpSound)
-                    end
-                    if type(modData.modData) == "table" then
-                        for key,value in pairs(modData.modData) do
-                            obj:getModData()[key] = value
+                if luautils.stringStarts(_spriteName, 'blends_natural_02') then
+                    if luautils.stringStarts(_spriteName, 'blends_natural_02_0') or luautils.stringStarts(_spriteName, 'blends_natural_02_5') or luautils.stringStarts(_spriteName, 'blends_natural_02_6') or luautils.stringStarts(_spriteName, 'blends_natural_02_7') then
+                        local spr = getSprite( _spriteName );
+                        local floor = _square:getFloor();
+                        if floor and spr then
+                            for i=_square:getObjects():size()-1, 0, -1 do
+                                local object = _square:getObjects():get(i)
+                                if object ~= floor then
+                                    if isClient() then _square:transmitRemoveItemFromSquare(object) end
+                                    _square:RemoveTileObject(object);
+                                end
+                            end
+                            floor:clearAttachedAnimSprite()
+                            _square:addFloor(itemSprite)
                         end
+                        getPlayer():setHaloNote("Tiles around water will improve when zone will reloaded")
+                    else
+                        getPlayer():setHaloNote("This water tiles not work because need water zone for it")
+                        return
                     end
-                    if type(modData.color) == "userdata" then
-                        obj:setCustomColor(modData.color);
+                else
+                    obj = IsoThumpable.new(getCell(), _square, itemSprite, false, {}); --IsoObject.new( getCell(), self.square, itemSprite );
+                    obj:setMaxHealth(self:getObjectHealth());
+                    obj:setHealth(obj:getMaxHealth());
+                    obj:setThumpDmg(1); --zeds needed to hurt obj
+                    obj:setIsThumpable(true);
+                    obj:setBlockAllTheSquare(true);
+                    obj:setCanPassThrough(false);
+                    obj:setCanPassThrough(false);
+                    obj:setHoppable(false);
+                    obj:setBreakSound("BreakObject");
+                    --isGenericThump = true;
+                    if _item:hasModData() then
+                        local modData = _item:getModData()
+                        if type(modData.name) == "string" then
+                            obj:setName(modData.name)
+                        end
+                        if tonumber(modData.health) and tonumber(modData.maxHealth) then
+                            obj:setHealth(tonumber(modData.health))
+                            obj:setMaxHealth(tonumber(modData.maxHealth))
+                        end
+                        if type(modData.thumpSound) == "string" then
+                            obj:setThumpSound(modData.thumpSound)
+                        end
+                        if type(modData.modData) == "table" then
+                            for key,value in pairs(modData.modData) do
+                                obj:getModData()[key] = value
+                            end
+                        end
+                        if type(modData.color) == "userdata" then
+                            obj:setCustomColor(modData.color);
+                        end
                     end
                 end
             end
-
         end
 
         if obj and _item and _item:hasModData() and _item:getModData().movableData then
@@ -1932,6 +1999,8 @@ function ISMoveableSpriteProps:placeMoveableInternal( _square, _item, _spriteNam
     --ISMoveableCursor.clearCacheForAllPlayers();
 
     triggerEvent("OnContainerUpdate")
+
+    IsoGenerator.updateGenerator(_square)
 end
 
 -- returns index of snapface
@@ -2459,7 +2528,6 @@ function ISMoveableSpriteProps:getScrapItemsList(_character)
     for k,mat in ipairs(materials) do
         scrapDef = ISMoveableDefinitions:getInstance().getScrapDefinition( mat );
         chance = self:getChanceByDef(scrapDef, _character);
-
         addedAmount = 0;
         if scrapDef and chance then
             if scrapDef.returnItems and #scrapDef.returnItems > 0 then
@@ -2479,7 +2547,7 @@ function ISMoveableSpriteProps:getScrapItemsList(_character)
                     table.insert(items.unusable, scrapDef.unusableItem);
                 end
             end
-        end
+        end		
     end
 
     return items;
@@ -2499,6 +2567,11 @@ function ISMoveableSpriteProps:addScrapItemToList( _list, _item, _max, _chance, 
                 amount = amount*2;
             end
         end
+		print("_item " .. tostring(_item))
+		-- kludge to prevent floors from providing more nails than used to make them
+		if _item == "Base.Nails" and self.object:isFloor() and amount > 1 then
+			amount = 1
+		end
         if amount > 0 then
             for i = 1, amount do
                 local randNum = ZombRandFloat(0,101);
@@ -2829,12 +2902,28 @@ function ISMoveableSpriteProps:canScrapObjectInternal(_result, _object)
     if canScrap and instanceof(_object, "IsoThumpable") and _object:isWindow() and _object:getSquare():getWindow(_object:getNorth()) then
         canScrap = false
     end
+    -- As with ISDestroyCursor, the floor at the top of a staircase cannot be destroyed.
+    if canScrap and self:isFloorAtTopOfStairs(_object) then
+        canScrap = false
+    end
     if canScrap and self.isWaterCollector then
         if _object and _object:hasWater() then
             canScrap = false
         end
     end
     return canScrap;
+end
+
+function ISMoveableSpriteProps:isFloorAtTopOfStairs(object)
+    if not object then return false end
+    if object:getZ() == 0 then return false end
+    local props = object:getProperties()
+    if not props:Is(IsoFlagType.solidfloor) then return false end
+    local square = getCell():getGridSquare(object:getX() + 1, object:getY(), object:getZ() - 1)
+    if square and square:Has(IsoObjectType.stairsTW) then return true end
+    square = getCell():getGridSquare(object:getX(), object:getY() + 1, object:getZ() - 1)
+    if square and square:Has(IsoObjectType.stairsTN) then return true end
+    return false
 end
 
 function ISMoveableSpriteProps:getScrapSkillChance( _player )
