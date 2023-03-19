@@ -298,17 +298,14 @@ function ISMoveableSpriteProps:getBreakChance( _player )
 	if ISMoveableDefinitions.cheat then return 0; end
 	if _player and self.isMoveable and self.canBreak and self.pickUpTool then
         local toolDef = ISMoveableDefinitions:getInstance().getToolDefinition( self.pickUpTool ); --ISMoveableSpriteProps.toolDefinitions[self.pickUpTool];
-         if toolDef then 
- 	   if not toolDef.perk then
- 	    return 0;
-            end
+        if toolDef then
             local perkLevel = _player:getPerkLevel(toolDef.perk);
- 	   if perkLevel >= 3 then
- 	     return 0;
- 	   end
+ 	    if perkLevel >= 3 then
+ 	        return 0;
+            end
             return (3-perkLevel)*10;
         else
-print("Missing tool definition for: "..tostring(self.pickUpTool));
+            print("Missing tool definition for: "..tostring(self.pickUpTool));
         end
 	end
 	return 0;
