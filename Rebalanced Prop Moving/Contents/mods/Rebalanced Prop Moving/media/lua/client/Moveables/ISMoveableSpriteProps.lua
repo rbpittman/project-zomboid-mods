@@ -25,11 +25,12 @@ ISMoveableSpriteProps.multiSpriteFloorRadius = 3;
 function ISMoveableSpriteProps:isWhitelisted( _mode )
    -- Whitelist certain sprites from the tool and skill requirements
    -- for pickup and placement (not scrap)
-   -- print("Checking sprite named '"..tostring(self.spriteName).."'")
+   -- print("Checking sprite named '"..tostring(self.spriteName).."', with display name '"..tostring(self.name).."'")
    return (_mode == "pickup" or _mode == "place") and ( -- Only modifying pickup and place, scrap has normal reqs
           (self.spriteName:find("^appliances_") ~= nil) or
 	  (self.spriteName:find("^furniture_") ~= nil and self.spriteName:find("furniture_shelving_01_2") == nil) or -- Allow furniture, but not wall shelves
 	  (self.name == "Crate") or
+	  (self.name == "Military Crate") or
 	  (self.spriteName:find("^carpentry") ~= nil and self.spriteName:find("^carpentry_02_68") == nil)); -- Allow all carpentry except specific wall shelves
 end
 
