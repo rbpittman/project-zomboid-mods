@@ -274,10 +274,6 @@ function ISMoveableSpriteProps:getIndexedFaces()
         table.insert(d, faces.E or faces.W or ownFace ); -- 4
     end
     return d;
-	-- Don't have access to _mode here (not a parameter), but should
-        -- only be called in pickup mode from what I can tell
-        if self:isWhitelisted("pickup") then return 0; end
-
 end
 
 function ISMoveableSpriteProps:getFaceIndex()
@@ -296,6 +292,9 @@ end
 
 function ISMoveableSpriteProps:getBreakChance( _player )
 	if ISMoveableDefinitions.cheat then return 0; end
+        -- Don't have access to _mode here (not a parameter), but should
+        -- only be called in pickup mode from what I can tell
+        if self:isWhitelisted("pickup") then return 0; end
 	if _player and self.isMoveable and self.canBreak and self.pickUpTool then
         local toolDef = ISMoveableDefinitions:getInstance().getToolDefinition( self.pickUpTool ); --ISMoveableSpriteProps.toolDefinitions[self.pickUpTool];
         if toolDef then
