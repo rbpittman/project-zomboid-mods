@@ -460,6 +460,7 @@ function ISMoveableSpriteProps:hasRequiredSkill( _player, _mode )
         return canRepair, repairPerkName, repairPerk;
     end
     if _player and self.isMoveable and _mode then
+        if self:isWhitelisted(_mode) then return true; end
         local tool = (_mode=="pickup" and self.pickUpTool) or (_mode=="place" and self.placeTool);
         local toolDef = ISMoveableDefinitions:getInstance().getToolDefinition( tool ); -- ISMoveableSpriteProps.toolDefinitions[self.pickUpTool];
         if toolDef then
