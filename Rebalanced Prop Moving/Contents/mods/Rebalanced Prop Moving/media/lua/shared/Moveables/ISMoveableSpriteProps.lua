@@ -640,7 +640,7 @@ function ISMoveableSpriteProps:getInfoPanelDescription( _square, _object, _playe
         else
             infoTable = ISMoveableSpriteProps.addLineToInfoTable( infoTable, getText("IGUI_Tool")..":", 255, 255, 255, getText("IGUI_None"), getColorValues(true) );
         end
-        if #InfoPanelFlags.tool2String > 0 then
+        if #InfoPanelFlags.tool2String > 0 and not whitelist then
             local first = true;
             for _,s in ipairs(InfoPanelFlags.tool2String) do
                 if first then
