@@ -24,6 +24,17 @@ InfoPanelFlags = {};
 SpriteGridCache = {}; -- a cache of a spritegrid object on world (stores associated sprites, object, squares)
 
 ISMoveableSpriteProps = {};
+function ISMoveableSpriteProps:isWhitelisted( _mode )
+   -- Whitelist certain sprites from the tool and skill requirements
+   -- for pickup and placement (not scrap)
+   -- print("Checking sprite named '"..tostring(self.spriteName).."', with display name '"..tostring(self.name).."'")
+   return (_mode == "pickup" or _mode == "place") and ( -- Only modifying pickup and place, scrap has normal reqs
+          (self.spriteName:find("^appliances_") ~= nil) or
+	  (self.spriteName:find("^furniture_") ~= nil and self.spriteName:find("furniture_shelving_01_2") == nil) or -- Allow furniture, but not wall shelves
+	  (self.name == "Crate") or
+	  (self.name == "Military Crate") or
+	  (self.spriteName:find("^carpentry") ~= nil and self.spriteName:find("^carpentry_02_68") == nil)); -- Allow all carpentry except specific wall shelves
+end
 ISMoveableSpriteProps.debug = false;
 ISMoveableSpriteProps.itemInstances = {};
 ISMoveableSpriteProps.multiSpriteFloorRadius = 3;
@@ -303,17 +314,20 @@ end
 
 function ISMoveableSpriteProps:getBreakChance( _player )
 	if ISMoveableDefinitions.cheat then return 0; end
+        -- Don't have access to _mode here (not a parameter), but should
+        -- only be called in pickup mode from what I can tell
+        if self:isWhitelisted("pickup") then return 0; end
 	if _player and self.isMoveable and self.canBreak and self.pickUpTool then
         local toolDef = ISMoveableDefinitions:getInstance().getToolDefinition( self.pickUpTool ); --ISMoveableSpriteProps.toolDefinitions[self.pickUpTool];
         if toolDef then
+            if not toolDef.perk then
+	        return 0;
+            end
             local perkLevel = _player:getPerkLevel(toolDef.perk);
-            if self.type == "Window" then
-                return 5+((10-perkLevel)*5);
-			end
-			if not toolDef.perk then
-				return 25;
-			end
-            return (10-perkLevel)*7.5;
+ 	    if perkLevel >= 3 then
+ 	        return 0;
+            end
+            return (3-perkLevel)*10;
         else
             print("Missing tool definition for: "..tostring(self.pickUpTool));
         end
@@ -461,6 +475,7 @@ end
 
 function ISMoveableSpriteProps:hasTool( _player, _mode )
 	if ISMoveableDefinitions.cheat then return true; end
+        if self:isWhitelisted(_mode) then return true; end
     local tool = (_mode == "pickup" and self.pickUpTool) or (_mode == "place" and self.placeTool);
     if tool and _player then
         local inventory = _player:getInventory();
@@ -566,6 +581,7 @@ function ISMoveableSpriteProps:getInfoPanelDescription( _square, _object, _playe
         end
 
         --##########################################
+	local whitelist = self:isWhitelisted(_mode);
         if _object and instanceof(_object, "IsoMannequin") and _object:getMannequinScriptName()
         and (_object:getMannequinScriptName():contains("Scarecrow") or _object:getMannequinScriptName():contains("Skeleton"))
         then infoTable = ISMoveableSpriteProps.addLineToInfoTable( infoTable, getText("IGUI_Name")..":", 255, 255, 255, Translator.getMoveableDisplayName(_object:getMannequinScriptName()), 255, 255, 255 );
@@ -603,14 +619,14 @@ function ISMoveableSpriteProps:getInfoPanelDescription( _square, _object, _playe
 
         if InfoPanelFlags.weight then infoTable = ISMoveableSpriteProps.addLineToInfoTable( infoTable, getText("Tooltip_item_Weight")..":", 255, 255, 255, tostring(InfoPanelFlags.weight), 255, 255, 255 ); end
 
-        if InfoPanelFlags.nameSkill then
+        if InfoPanelFlags.nameSkill and not whitelist then
             local skillText = InfoPanelFlags.nameSkill
             if InfoPanelFlags.levelSkill ~= nil and InfoPanelFlags.levelSkill > 0 then
                 skillText = skillText .. " " .. _player:getPerkLevel(InfoPanelFlags.perk) .. "/" .. InfoPanelFlags.levelSkill
             end
             infoTable = ISMoveableSpriteProps.addLineToInfoTable( infoTable, getText("IGUI_Skill")..":", 255, 255, 255, skillText, getColorValues(InfoPanelFlags.hasSkill) );
         end
-        if #InfoPanelFlags.toolString > 0 then
+        if #InfoPanelFlags.toolString > 0 and not whitelist then
             local first = true;
             for _,s in ipairs(InfoPanelFlags.toolString) do
                 if first then
@@ -2761,6 +2777,9 @@ function ISMoveableSpriteProps:walkToAndEquip( _character, _square, _mode )
         if not usesTool then
             return true;
         else
+            -- Need to whitelist here as well for pickup and place
+	    -- actions, tricky special case
+	    if self:isWhitelisted(_mode) then return true; end
             local tool = self:hasTool( _character, _mode );
 
             if tool then
