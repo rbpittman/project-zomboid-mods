@@ -1,6 +1,8 @@
 name=Rebalanced Prop Moving
 poster=poster.png
 id=RebalancedPropMoving
+modversion=2.0
+versionMin=42.0.0
 description=Revises prop moving break chances and tools to be more realistic. 
 description=
 description=1) Removes tool and skill requirements on all furniture (except shelves) and appliances. 
