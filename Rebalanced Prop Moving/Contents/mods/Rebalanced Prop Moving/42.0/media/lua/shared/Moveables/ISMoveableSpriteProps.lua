@@ -998,10 +998,10 @@ function ISMoveableSpriteProps:getObjectMoveProps( _obj )
 end
 
 function ISMoveableSpriteProps:isFreeTile( _square )
-    if not _square or (_square:Is("BlocksPlacement") and not _square:Is(IsoFlagType.canBeRemoved)) or _square:Is(IsoFlagType.canBeCut) or _square:Is("tree")
-            or _square:Is(IsoFlagType.doorN) or _square:Is(IsoFlagType.doorW) --prevent placement of objects next to doors
-            or (_square:getTileInDirection(IsoDirections.S) and _square:getTileInDirection(IsoDirections.S):Is(IsoFlagType.doorN))
-            or (_square:getTileInDirection(IsoDirections.E) and _square:getTileInDirection(IsoDirections.E):Is(IsoFlagType.doorW)) then
+    if not _square or (_square:Is("BlocksPlacement") and not _square:Is(IsoFlagType.canBeRemoved)) or _square:Is(IsoFlagType.canBeCut) or _square:Is("tree") then
+            -- or _square:Is(IsoFlagType.doorN) or _square:Is(IsoFlagType.doorW) --prevent placement of objects next to doors
+            -- or (_square:getTileInDirection(IsoDirections.S) and _square:getTileInDirection(IsoDirections.S):Is(IsoFlagType.doorN))
+            -- or (_square:getTileInDirection(IsoDirections.E) and _square:getTileInDirection(IsoDirections.E):Is(IsoFlagType.doorW)) then
         return false;
     end
     return true;
