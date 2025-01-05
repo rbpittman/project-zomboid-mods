@@ -1,0 +1,6 @@
+version=1
+id=2688463893
+title=Balanced Fitness Gains
+description=Makes fitness workouts (squats and situps) provide roughly 500 XP, and strength workouts provide 1000 for just pushups, and 1500 with workout gear.
+tags=
+visibility=public
