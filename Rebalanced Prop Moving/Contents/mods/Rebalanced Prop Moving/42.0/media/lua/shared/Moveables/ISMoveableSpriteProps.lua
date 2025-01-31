@@ -998,10 +998,11 @@ function ISMoveableSpriteProps:getObjectMoveProps( _obj )
 end
 
 function ISMoveableSpriteProps:isFreeTile( _square )
-    if not _square or (_square:Is("BlocksPlacement") and not _square:Is(IsoFlagType.canBeRemoved)) or _square:Is(IsoFlagType.canBeCut) or _square:Is("tree") then
-            -- or _square:Is(IsoFlagType.doorN) or _square:Is(IsoFlagType.doorW) --prevent placement of objects next to doors
-            -- or (_square:getTileInDirection(IsoDirections.S) and _square:getTileInDirection(IsoDirections.S):Is(IsoFlagType.doorN))
-            -- or (_square:getTileInDirection(IsoDirections.E) and _square:getTileInDirection(IsoDirections.E):Is(IsoFlagType.doorW)) then
+    if not _square or (_square:Is("BlocksPlacement") and not _square:Is(IsoFlagType.canBeRemoved)) or _square:Is(IsoFlagType.canBeCut) or _square:Is("tree")
+--             or _square:Is(IsoFlagType.doorN) or _square:Is(IsoFlagType.doorW) --prevent placement of objects next to doors
+--             or (_square:getTileInDirection(IsoDirections.S) and _square:getTileInDirection(IsoDirections.S):Is(IsoFlagType.doorN))
+--             or (_square:getTileInDirection(IsoDirections.E) and _square:getTileInDirection(IsoDirections.E):Is(IsoFlagType.doorW))
+             then
         return false;
     end
     return true;
@@ -1045,7 +1046,11 @@ function ISMoveableSpriteProps:getSpriteGridCache( _square, _verifyOnly, _getWor
                 if _getWorldObjects then
                     obj, sprInstance = self:findOnSquare( square, spriteForPos:getName() );
                     if not obj then
-                        return false;
+                        createTile(spriteForPos:getName(), square)      -- On map some objects can miss tiles (like tent), so we generate missing tile obj.
+                        obj, sprInstance = self:findOnSquare( square, spriteForPos:getName() );
+                        if not obj then
+                            return false;
+                        end
                     end
                 end
                 if not _verifyOnly then
@@ -2183,7 +2188,6 @@ function ISMoveableSpriteProps:placeMoveableInternal( _square, _item, _spriteNam
                     obj:setIsThumpable(true);
                     obj:setBlockAllTheSquare(true);
                     obj:setCanPassThrough(false);
-                    obj:setCanPassThrough(false);
                     obj:setHoppable(false);
                     obj:setBreakSound(IsoThumpable.GetBreakFurnitureSound(itemSprite));
                     if self:isBreakablePlant(obj) then
@@ -2351,6 +2355,8 @@ function ISMoveableSpriteProps:placeMoveableInternal( _square, _item, _spriteNam
     triggerEvent("OnContainerUpdate")
 
     IsoGenerator.updateGenerator(_square)
+
+    if obj then return obj end
 end
 
 -- returns index of snapface
@@ -2654,6 +2660,7 @@ function ISMoveableSpriteProps:rotateMoveableInternal( _character, _square, _ori
         if obj and not sprInstance and self.sprite and self:canRotateMoveable( _square, obj ) then
             obj:setSprite( self.sprite );
             obj:RemoveAttachedAnims();
+            obj:afterRotated();
             if isClient() then obj:transmitUpdatedSpriteToServer(); end
             if isServer() then obj:transmitUpdatedSpriteToClients(); end
             if self.isTable then                                                                                    -- If table then rotate tabletop items (sinks etc) to match table face.
@@ -2668,6 +2675,7 @@ function ISMoveableSpriteProps:rotateMoveableInternal( _character, _square, _ori
                             if newSprite then
                                 tableTopObject:setSprite( newSprite );
                                 tableTopObject:RemoveAttachedAnims();
+                                tableTopObject:afterRotated();
                                 if isClient() then tableTopObject:transmitUpdatedSpriteToServer(); end
                                 if isServer() then tableTopObject:transmitUpdatedSpriteToClients(); end
                             end
