@@ -1,7 +1,7 @@
 name=Rebalanced Prop Moving
 poster=poster.png
 id=RebalancedPropMoving
-modversion=2.0
+modversion=2.1
 versionMin=42.0.0
 description=Revises prop moving break chances and tools to be more realistic. 
 description=
