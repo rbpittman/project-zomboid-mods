@@ -32,6 +32,7 @@ function ISMoveableSpriteProps:isWhitelisted( _mode )
           (self.spriteName:find("^appliances_") ~= nil) or
 	  (self.spriteName:find("^furniture_") ~= nil and self.spriteName:find("furniture_shelving_01_2") == nil) or -- Allow furniture, but not wall shelves
 	  (self.name == "Crate") or
+	  (self.name:find("Clothes") ~= nil) or
 	  (self.name == "Military Crate") or
 	  (self.spriteName:find("^carpentry") ~= nil and self.spriteName:find("^carpentry_02_68") == nil)); -- Allow all carpentry except specific wall shelves
 end
