@@ -19,5 +19,5 @@ description=
 description=Note: Not compatible with [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2685057281]Safer Prop Moving[/url]
 description=
 description=Disclaimer: There could be big bugs in this mod! The vanilla lua code has numerous edge cases, please comment if you discover issues.
-tags=Balance
+tags=Balance,Build 42
 visibility=public
