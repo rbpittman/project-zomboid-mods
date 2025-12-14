@@ -1,6 +1,6 @@
-name=Rebalanced Prop Moving
+name=Rebalanced Prop Moving 42.12
 poster=poster.png
-id=RebalancedPropMoving
+id=RebalancedPropMoving42.12
 modversion=2.5
 versionMin=42.0.0
 description=Revises prop moving break chances and tools to be more realistic. 

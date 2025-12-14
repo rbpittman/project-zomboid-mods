@@ -1,6 +1,8 @@
 version=1
-id=2699828474
-title=Rebalanced Prop Moving
+id=
+title=Rebalanced Prop Moving 42.12
+description=LEGACY Mod for game version 42.12
+description=
 description=Do I really need a hammer to move a couch?
 description=I wish I could move this desk, but I haven't taken any carpentry classes!
 description=
