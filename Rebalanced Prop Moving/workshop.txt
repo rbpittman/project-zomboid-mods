@@ -20,7 +20,7 @@ description=Note: Not compatible with [url=https://steamcommunity.com/sharedfile
 description=
 description=Disclaimer: There could be big bugs in this mod! The vanilla lua code has numerous edge cases, please comment if you discover issues.
 description=
-description=Should be compatible with 42.0 - 42.13
+description=Should be compatible with 42.0 - 42.16
 description=
 tags=Balance,Build 42
 visibility=public
